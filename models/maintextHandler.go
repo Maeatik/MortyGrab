@@ -8,17 +8,19 @@ import (
 	"net/http"
 )
 type MainText struct {
-	Id       	string 	`json:"id"`
-	User_id    	string 	`json:"user_id"`
-	Page_id 	string 	`json:"page_id"`
-	PageDate    string 	`json:"page_date"`
+	Id       	string 		`json:"id"`
+	User_id    	string 		`json:"user_id"`
+	Page_id 	string 		`json:"page_id"`
+	PageDate    string 		`json:"pagedate"`
 }
 
 type MainTextExpand struct {
-	Id       	string 			`json:"id"`
-	User_id    	Users 			`json:"user_id"`
-	Page_id 	PageSiteExpand 	`json:"page_id"`
-	PageDate    string 			`json:"page_date"`
+	Id       	string 				`json:"id"`
+	User_id    	string 				`json:"user_id"`
+	Page_id 	string		 		`json:"page_id"`
+	PageDate    string 				`json:"pagedate"`
+	User_exp	Users				`json:"user_exp"`
+	Page_exp	PageSite			`json:"page_exp"`
 }
 
 var maintext1 []MainText
@@ -32,7 +34,7 @@ func MainTextsGETHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !ok  {
 
-		rows, err := db.Query("SELECT * FROM maintext ")
+		rows, err := db.Query("SELECT * FROM maintext ORDER BY id")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -53,10 +55,11 @@ func MainTextsGETHandler(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		defer db.Close()
 	}else{
-		rows, err := db.Query("SELECT * FROM maintext")
+		rows, err := db.Query("SELECT * FROM maintext ORDER BY id")
 		if err != nil {
 			log.Fatal(err)
 		}
+		var textBytes []byte
 
 		for rows.Next() {
 			var text MainText
@@ -99,21 +102,23 @@ func MainTextsGETHandler(w http.ResponseWriter, r *http.Request) {
 						}
 
 						maintextExpand1 = append(maintextExpand1, MainTextExpand{text.Id,
+							text.User_id,
+							text.Page_id,
+							text.PageDate,
 							Users{userT.Id, userT.Login, userT.Password},
-							PageSiteExpand{page.Id, GrabSite{site.Id, site.NameSite, site.URL}, page.Page_link,
-								page.Namepage, page.Grabtext}, text.PageDate})
-						textBytes, _ := json.MarshalIndent(maintextExpand1, "", "\t")
+							PageSite{page.Id, page.Site_id, page.Page_link, page.Namepage, page.Grabtext}})
 
-						w.Header().Set("Content-Type", "application/json")
-						w.Write(textBytes)
 						defer rowsSiteExpand.Close()
 					}
 					defer rowsPageExpand.Close()
 				}
 				defer rowsUserExpand.Close()
 			}
+			textBytes, _ = json.MarshalIndent(maintextExpand1, "", "\t")
+			w.Header().Set("Content-Type", "application/json")
+			defer rows.Close()
 		}
-		defer rows.Close()
+		w.Write(textBytes)
 		defer db.Close()
 	}
 }
@@ -229,9 +234,11 @@ func MainTextGETHandler(w http.ResponseWriter, r *http.Request)  {
 						}
 
 						maintextExpand1 = append(maintextExpand1, MainTextExpand{text.Id,
+							text.User_id,
+							text.Page_id,
+							text.PageDate,
 							Users{userT.Id, userT.Login, userT.Password},
-							PageSiteExpand{page.Id, GrabSite{site.Id, site.NameSite, site.URL}, page.Page_link,
-								page.Namepage, page.Grabtext}, text.PageDate})
+							PageSite{page.Id, page.Site_id, page.Page_link, page.Namepage, page.Grabtext}})
 						textBytes, _ := json.MarshalIndent(maintextExpand1, "", "\t")
 
 						w.Header().Set("Content-Type", "application/json")

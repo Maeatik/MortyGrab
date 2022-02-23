@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -18,17 +19,20 @@ type PageSite struct {
 
 type PageSiteExpand struct {
 	Id       	string 		`json:"id"`
-	Site_id    	GrabSite	`json:"site_id"`
+	Site_id    	string		`json:"site_id"`
 	Page_link 	string		`json:"page_link"`
 	Namepage    string 		`json:"namepage"`
-	Grabtext	string 		`json:"grabtext""`
+	Grabtext	string 		`json:"grabtext"`
+	Site_expand GrabSite	`json:"site_exp"`
 }
 
 func ToExpand (w http.ResponseWriter, db *sql.DB) {
-	rows, err := db.Query("SELECT * FROM pagesite ")
+	rows, err := db.Query("SELECT * FROM pagesite ORDER BY id")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var pageBytes []byte
 
 	for rows.Next() {
 		var page PageSite
@@ -49,20 +53,17 @@ func ToExpand (w http.ResponseWriter, db *sql.DB) {
 				panic(err)
 			}
 			pagesiteExpand1 = append(pagesiteExpand1, PageSiteExpand{page.Id,
-				GrabSite{site.Id, site.NameSite, site.URL},
-				page.Page_link, page.Namepage, page.Grabtext})
-
+				page.Site_id, page.Page_link, page.Namepage, page.Grabtext, GrabSite{site.Id, site.NameSite, site.URL}})
 			defer rowsExpand.Close()
 		}
 
-		pageBytes, _ := json.MarshalIndent(pagesiteExpand1, "", "\t")
+		pageBytes, _ = json.MarshalIndent(pagesiteExpand1, "", "\t")
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(pageBytes)
-		defer rowsExpand.Close()
-	}
 
-	defer rows.Close()
+		defer rows.Close()
+	}
+	w.Write(pageBytes)
 	defer db.Close()
 }
 
@@ -75,11 +76,11 @@ func PageSitesGETHandler(w http.ResponseWriter, r *http.Request) {
 	pagesiteExpand1 = nil
 	_, ok := r.URL.Query()["expand"]
 	if !ok {
-		rows, err := db.Query("SELECT * FROM pagesite")
+		rows, err := db.Query("SELECT * FROM pagesite ORDER BY id")
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		var pageBytes []byte
 		for rows.Next() {
 			var page PageSite
 			err = rows.Scan(&page.Id, &page.Site_id, &page.Page_link, &page.Namepage, &page.Grabtext)
@@ -88,7 +89,7 @@ func PageSitesGETHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			pagesite1 = append(pagesite1, PageSite{page.Id, page.Site_id, page.Page_link, page.Namepage, page.Grabtext})
 		}
-		pageBytes, _ := json.MarshalIndent(pagesite1, "", "\t")
+		pageBytes, _ = json.MarshalIndent(pagesite1, "", "\t")
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(pageBytes)
@@ -184,9 +185,8 @@ func PageSiteGETHandler(w http.ResponseWriter, r *http.Request)  {
 						if err != nil {
 							panic(err)
 						}
-						pagesiteExpand1 = append(pagesiteExpand1, PageSiteExpand{page.Id,
-							GrabSite{site.Id, site.NameSite, site.URL},
-							page.Page_link, page.Namepage, page.Grabtext})
+						pagesite1 = append(pagesite1, PageSite{page.Id, page.Site_id, page.Page_link, page.Namepage, page.Grabtext})
+
 
 						defer rowsExpand.Close()
 				}
@@ -203,6 +203,7 @@ func PageSiteDELETEHandler(w http.ResponseWriter, r *http.Request)  {
 	db := OpenConnection()
 	params := mux.Vars(r)
 	idGet := params["id"]
+	fmt.Println(idGet)
 	_, err := db.Exec("DELETE FROM pagesite where id=$1", idGet)
 
 	if err != nil{
@@ -215,6 +216,7 @@ func PageSiteDELETEHandler(w http.ResponseWriter, r *http.Request)  {
 }
 
 func PageSitePUTHandler(w http.ResponseWriter, r *http.Request)  {
+	fmt.Print(1)
 	db := OpenConnection()
 	params := mux.Vars(r)
 	idGet := params["id"]

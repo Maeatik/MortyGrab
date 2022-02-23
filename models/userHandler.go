@@ -22,7 +22,7 @@ func UsersGETHandler(w http.ResponseWriter, r *http.Request) {
 	keyPassword, okP := r.URL.Query()["password"]
 
 	if (!okL || len(keyLogin[0]) < 1 )&&(!okP || len(keyPassword[0]) < 1 ){
-		rows, err := db.Query("SELECT * FROM users ")
+		rows, err := db.Query("SELECT * FROM users ORDER BY id")
 		if err != nil {
 			log.Fatal(err)
 		}

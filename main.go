@@ -4,13 +4,16 @@ import (
 	"checking/models"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 )
 
 func main() {
 
+
 	r := mux.NewRouter()
+
 
 	r.HandleFunc("/users", models.UsersGETHandler).Methods("GET")
 	r.HandleFunc("/users", models.UserPOSTHandler).Methods("POST")
@@ -40,7 +43,9 @@ func main() {
 	r.HandleFunc("/page_sites/{id}", models.PageSiteDELETEHandler).Methods("DELETE")
 	r.HandleFunc("/page_sites/{id}", models.PageSitePUTHandler).Methods("PUT")
 
-	log.Fatal(http.ListenAndServe(":3000", r))
+
+	handler := cors.AllowAll().Handler(r)
+	log.Fatal(http.ListenAndServe(":3000", handler))
 
 
 }

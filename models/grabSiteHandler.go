@@ -8,7 +8,7 @@ import (
 )
 type GrabSite struct {
 	Id       string `json:"id"`
-	NameSite string `json:"nameSite"`
+	NameSite string `json:"namesite"`
 	URL      string `json:"url"`
 }
 
@@ -18,11 +18,11 @@ func GrabSitesGETHandler	(w http.ResponseWriter, r *http.Request) {
 	db := OpenConnection()
 	grabsite1 = nil
 
-	keyName, okName := r.URL.Query()["nameSite"]
+	keyName, okName := r.URL.Query()["namesite"]
 	keyUrl, okUrl := r.URL.Query()["url"]
 
 	if (!okName || len(keyName[0]) < 1 )&&(!okUrl || len(keyUrl[0]) < 1 ) {
-		rows, err := db.Query("SELECT * FROM grabsite ")
+		rows, err := db.Query("SELECT * FROM grabsite ORDER BY id")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -62,6 +62,7 @@ func GrabSitesGETHandler	(w http.ResponseWriter, r *http.Request) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(siteBytes)
+				siteBytes = nil
 			}
 
 			defer row.Close()
@@ -85,6 +86,7 @@ func GrabSitesGETHandler	(w http.ResponseWriter, r *http.Request) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(siteBytes)
+				siteBytes = nil
 			}
 
 			defer row.Close()
